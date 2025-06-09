@@ -2,11 +2,11 @@ body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #f4f4f4;
+    background-color: #ffffff;
 }
 
 header {
-    background: #35424a;
+    background: #0033a0; /* blue */
     color: #ffffff;
     padding: 10px 0;
     text-align: center;
@@ -22,8 +22,22 @@ h1 {
     overflow: hidden;
 }
 
+button, input[type="submit"] {
+    background-color: #d72631; /* red */
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    margin-top: 10px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+button:hover, input[type="submit"]:hover {
+    background-color: #a61b29;
+}
+
 footer {
-    background: #35424a;
+    background: #0033a0; /* blue */
     color: #ffffff;
     text-align: center;
     padding: 10px 0;

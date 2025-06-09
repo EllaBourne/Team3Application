@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ stock_symbol }} Historical Data - StockViz</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>{{ stock_symbol }} - 10 Year Historical Data</h1>
+    </header>
+    <main class="container">
+        <img src="{{ url_for('static', filename=graph_filename) }}" alt="Stock Graph for {{ stock_symbol }}">
+        <br>
+        <a href="{{ url_for('home') }}"><button>Back</button></a>
+    </main>
+    <footer>
+        <p>&copy; 2025 StockViz</p>
+    </footer>
+</body>
+</html>
