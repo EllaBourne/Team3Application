@@ -1,9 +1,12 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 import matplotlib.pyplot as plt
 import os
 from datetime import datetime, timedelta
 import yfinance as yf
 import requests
+from news_client import NewsClient
+from sentiment import analyze_articles
+from helpers import validate_ticker, format_sentiment_summary, generate_natural_language_summary
 
 app = Flask(__name__)
 
@@ -26,7 +29,29 @@ def get_stock_news(stock_symbol):
 @app.route('/', methods=['GET', 'POST'])
 def home():
     error = None
-    return render_template('index.html', error=error)
+    articles = []
+    summary = None
+    sentiment_counts = None
+    stock_symbol = ''
+    nl_summary = None
+    if request.method == 'POST':
+        stock_symbol = request.form.get('stock_symbol', '').upper().strip()
+        if not validate_ticker(stock_symbol):
+            error = 'Invalid ticker symbol.'
+        else:
+            client = NewsClient()
+            fetched_articles = client.get_articles(stock_symbol)
+            # Fix: fallback to get_stock_news if NewsClient returns nothing
+            if not fetched_articles:
+                fetched_articles = get_stock_news(stock_symbol)
+            if not fetched_articles:
+                error = 'No news articles found.'
+            else:
+                articles, sentiment_counts = analyze_articles(fetched_articles)
+                summary = format_sentiment_summary(sentiment_counts)
+                # Add natural language summary
+                nl_summary = generate_natural_language_summary(articles)
+    return render_template('home.html', error=error, articles=articles, summary=summary, stock_symbol=stock_symbol, nl_summary=nl_summary)
 
 @app.route('/stock', methods=['POST'])
 def stock():

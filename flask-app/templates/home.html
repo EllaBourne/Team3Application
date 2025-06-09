@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Stock News Sentiment</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <h1>Stock News Sentiment Analyzer</h1>
+    <form method="POST">
+        <label for="stock_symbol">Stock Ticker Symbol:</label>
+        <input type="text" id="stock_symbol" name="stock_symbol" value="{{ request.form.stock_symbol or '' }}" required>
+        <button type="submit">Analyze</button>
+    </form>
+    {% if error %}
+        <div class="error">{{ error }}</div>
+    {% endif %}
+    {% if articles %}
+        <h2>Top News for {{ stock_symbol }}</h2>
+        <div class="summary-bar">
+            <strong>Summary:</strong> {{ summary }}
+        </div>
+        <div id="nl-summary-container">
+            <div id="nl-summary-loading" style="display:none;">Generating news summary...</div>
+            <div id="nl-summary-content">{% if nl_summary %}<strong>News Summary:</strong> {{ nl_summary }}{% endif %}</div>
+        </div>
+        <ul class="articles">
+            {% for article in articles %}
+                <li>
+                    <strong>{{ article.title }}</strong><br>
+                    <em>{{ article.description }}</em><br>
+                    <span class="sentiment {{ article.sentiment|lower }}">Sentiment: {{ article.sentiment }}</span>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const summaryContainer = document.getElementById('nl-summary-container');
+        if (summaryContainer && !document.getElementById('nl-summary-content').innerText.trim()) {
+            document.getElementById('nl-summary-loading').style.display = '';
+            fetch('/nl_summary?stock_symbol={{ stock_symbol }}')
+                .then(resp => resp.json())
+                .then(data => {
+                    document.getElementById('nl-summary-loading').style.display = 'none';
+                    document.getElementById('nl-summary-content').innerHTML = '<strong>News Summary:</strong> ' + data.summary;
+                })
+                .catch(() => {
+                    document.getElementById('nl-summary-loading').innerText = 'Failed to generate summary.';
+                });
+        }
+    });
+    </script>
+</body>
+</html>
