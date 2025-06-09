@@ -44,11 +44,25 @@ def stock():
             chart_data.append([timestamp, float(row['Close'])])
         # Fetch news articles
         news_articles = get_stock_news(stock_symbol)
+        # Add AI-generated news summary
+        try:
+            from helpers import generate_natural_language_summary
+        except ImportError:
+            import importlib.util
+            import sys
+            helpers_path = os.path.join(os.path.dirname(__file__), 'helpers.py')
+            spec = importlib.util.spec_from_file_location('helpers', helpers_path)
+            helpers = importlib.util.module_from_spec(spec)
+            sys.modules['helpers'] = helpers
+            spec.loader.exec_module(helpers)
+            generate_natural_language_summary = helpers.generate_natural_language_summary
+        nl_summary = generate_natural_language_summary(news_articles, stock_symbol) if news_articles else None
         return render_template(
             'stock.html',
             stock_symbol=stock_symbol,
             chart_data=chart_data,
-            news_articles=news_articles
+            news_articles=news_articles,
+            nl_summary=nl_summary
         )
     except Exception as e:
         error = f"Error: {str(e)}"
