@@ -50,11 +50,35 @@ def stock():
         plt.close()
         # Fetch news articles
         news_articles = get_stock_news(stock_symbol)
+        try:
+            from helpers import generate_natural_language_summary
+        except ImportError:
+            import importlib.util
+            import sys
+            helpers_path = os.path.join(os.path.dirname(__file__), 'helpers.py')
+            spec = importlib.util.spec_from_file_location('helpers', helpers_path)
+            helpers = importlib.util.module_from_spec(spec)
+            sys.modules['helpers'] = helpers
+            spec.loader.exec_module(helpers)
+            generate_natural_language_summary = helpers.generate_natural_language_summary
+        nl_summary = generate_natural_language_summary(news_articles, stock_symbol) if news_articles else None
+        # Prepare data for Highcharts: list of [timestamp, close]
+        chart_data = []
+        for date, row in data.iterrows():
+            try:
+                timestamp = int(date.timestamp() * 1000)
+                close_val = float(row['Close'])
+                if close_val is not None:
+                    chart_data.append([timestamp, close_val])
+            except Exception:
+                continue
         return render_template(
             'stock.html',
             stock_symbol=stock_symbol,
             graph_filename=graph_filename,
-            news_articles=news_articles
+            news_articles=news_articles,
+            nl_summary=nl_summary,
+            chart_data=chart_data
         )
     except Exception as e:
         error = f"Error: {str(e)}"
