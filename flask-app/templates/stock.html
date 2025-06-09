@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <title>{{ stock_symbol }} - StockWiz</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <!-- Use Highcharts Stock instead of regular Highcharts -->
+    <script src="https://code.highcharts.com/stock/highstock.js"></script>
 </head>
 <body>
     <header>
@@ -15,7 +16,7 @@
         <!-- Replace static image with interactive chart -->
         <div id="stock-chart" style="margin:0 auto; max-width:100%;"></div>
         <br>
-        <a href="{{ url_for('home') }}"><button style="margin-top:24px;">Back to Search</button></a>
+        <a href="{{ url_for('home') }}"><button style="margin-top:24px; padding-inline: 10px;">Back to Search</button></a>
         {% if news_articles %}
         <div style="margin-top:40px; text-align:left;">
             <h2 style="color:#0033a0;">Latest News</h2>
@@ -35,11 +36,11 @@
         {% endif %}
     </div>
     <footer>
-        &copy; 2025 StockWiz &mdash; Powered by Yahoo Finance
+        2025 StockWiz &mdash; Powered by Yahoo Finance
     </footer>
     <script>
     document.addEventListener('DOMContentLoaded', function () {
-        Highcharts.chart('stock-chart', {
+        Highcharts.stockChart('stock-chart', {
             chart: { type: 'line' },
             title: { text: 'Historical Stock Prices for {{ stock_symbol }} (10 Years)' },
             xAxis: {
@@ -49,10 +50,20 @@
             yAxis: {
                 title: { text: 'Price (USD)' }
             },
-            series: [{
-                name: '{{ stock_symbol }}',
-                data: {{ chart_data | tojson }}
-            }]
+            navigator: {
+                enabled: false
+            },
+            series: [
+                {
+                    name: "{{ stock_symbol }}",
+                    data: {{ chart_data|tojson|safe }},
+                    color: "#0033a0",
+                    tooltip: {
+                        valueDecimals: 2,
+                        valuePrefix: "$"
+                    }
+                }
+            ]
         });
     });
     </script>

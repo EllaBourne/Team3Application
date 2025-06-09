@@ -49,7 +49,7 @@ input[type="text"]:focus {
 }
 
 input[type="submit"], button {
-    background: linear-gradient(90deg, #0033a0 60%, #d72631 100%);
+    background: #0033a0;
     color: #fff;
     border: none;
     padding: 12px 0;
@@ -57,11 +57,12 @@ input[type="submit"], button {
     font-size: 1.1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background 0.4s, color 0.4s;
 }
 
 input[type="submit"]:hover, button:hover {
-    background: linear-gradient(90deg, #d72631 60%, #0033a0 100%);
+    background: #d72631;
+    color: #fff;
 }
 
 .stock-graph {
@@ -84,7 +85,7 @@ footer {
     background: #0033a0;
     color: #fff;
     text-align: center;
-    padding: 16px 0;
+    padding: 20px 0;
     margin-top: 40px;
     font-size: 1rem;
     letter-spacing: 1px;
