@@ -3,8 +3,25 @@ import matplotlib.pyplot as plt
 import os
 from datetime import datetime, timedelta
 import yfinance as yf
+import requests
 
 app = Flask(__name__)
+
+NEWS_API_KEY = 'd4b6777932da4e32ba9d8972d1aa7984'  # Replace with your actual key
+
+def get_stock_news(stock_symbol):
+    url = (
+        f"https://newsapi.org/v2/everything?"
+        f"q={stock_symbol}&"
+        f"sortBy=publishedAt&"
+        f"language=en&"
+        f"apiKey={NEWS_API_KEY}"
+    )
+    response = requests.get(url)
+    if response.status_code == 200:
+        articles = response.json().get('articles', [])[:5]
+        return articles
+    return []
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
@@ -31,7 +48,14 @@ def stock():
         plt.tight_layout()
         plt.savefig(graph_path)
         plt.close()
-        return render_template('stock.html', stock_symbol=stock_symbol, graph_filename=graph_filename)
+        # Fetch news articles
+        news_articles = get_stock_news(stock_symbol)
+        return render_template(
+            'stock.html',
+            stock_symbol=stock_symbol,
+            graph_filename=graph_filename,
+            news_articles=news_articles
+        )
     except Exception as e:
         error = f"Error: {str(e)}"
         return render_template('index.html', error=error)

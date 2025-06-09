@@ -1,47 +1,91 @@
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f4f7fa;
+    color: #222;
     margin: 0;
     padding: 0;
-    background-color: #ffffff;
 }
 
 header {
-    background: #0033a0; /* blue */
-    color: #ffffff;
-    padding: 10px 0;
+    background: linear-gradient(90deg, #0033a0 60%, #d72631 100%);
+    color: #fff;
+    padding: 32px 0 16px 0;
     text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
 h1 {
-    margin: 0;
+    margin: 0 0 8px 0;
+    font-size: 2.5rem;
+    letter-spacing: 2px;
 }
 
 .container {
-    width: 80%;
-    margin: auto;
-    overflow: hidden;
+    background: #fff;
+    max-width: 500px;
+    margin: 40px auto 0 auto;
+    padding: 32px 32px 24px 32px;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0,51,160,0.08);
 }
 
-button, input[type="submit"] {
-    background-color: #d72631; /* red */
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+input[type="text"] {
+    padding: 12px;
+    border: 1px solid #0033a0;
+    border-radius: 6px;
+    font-size: 1.1rem;
+    outline: none;
+    transition: border 0.2s;
+}
+
+input[type="text"]:focus {
+    border: 1.5px solid #d72631;
+}
+
+input[type="submit"], button {
+    background: linear-gradient(90deg, #0033a0 60%, #d72631 100%);
     color: #fff;
     border: none;
-    padding: 10px 20px;
-    margin-top: 10px;
+    padding: 12px 0;
+    border-radius: 6px;
+    font-size: 1.1rem;
+    font-weight: 600;
     cursor: pointer;
-    border-radius: 4px;
+    transition: background 0.2s;
 }
 
-button:hover, input[type="submit"]:hover {
-    background-color: #a61b29;
+input[type="submit"]:hover, button:hover {
+    background: linear-gradient(90deg, #d72631 60%, #0033a0 100%);
+}
+
+.stock-graph {
+    display: block;
+    margin: 32px auto 0 auto;
+    max-width: 100%;
+    border-radius: 12px;
+    box-shadow: 0 2px 16px rgba(0,51,160,0.08);
+    border: 2px solid #0033a0;
+}
+
+.error {
+    color: #d72631;
+    font-weight: 600;
+    margin-top: 12px;
+    text-align: center;
 }
 
 footer {
-    background: #0033a0; /* blue */
-    color: #ffffff;
+    background: #0033a0;
+    color: #fff;
     text-align: center;
-    padding: 10px 0;
-    position: relative;
-    bottom: 0;
-    width: 100%;
+    padding: 16px 0;
+    margin-top: 40px;
+    font-size: 1rem;
+    letter-spacing: 1px;
 }

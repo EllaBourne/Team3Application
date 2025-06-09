@@ -2,20 +2,38 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{{ stock_symbol }} Historical Data - StockViz</title>
+    <title>{{ stock_symbol }} - StockViz</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
     <header>
-        <h1>{{ stock_symbol }} - 10 Year Historical Data</h1>
+        <h1>{{ stock_symbol }} Stock Chart</h1>
+        <p style="font-size:1.1rem; margin:0;">10-Year Historical Price (USD)</p>
     </header>
-    <main class="container">
-        <img src="{{ url_for('static', filename=graph_filename) }}" alt="Stock Graph for {{ stock_symbol }}">
+    <div class="container" style="text-align:center;">
+        <img class="stock-graph" src="{{ url_for('static', filename=graph_filename) }}" alt="Stock Graph for {{ stock_symbol }}">
         <br>
-        <a href="{{ url_for('home') }}"><button>Back</button></a>
-    </main>
+        <a href="{{ url_for('home') }}"><button style="margin-top:24px;">Back to Search</button></a>
+        {% if news_articles %}
+        <div style="margin-top:40px; text-align:left;">
+            <h2 style="color:#0033a0;">Latest News</h2>
+            <ul style="list-style:none; padding:0;">
+                {% for article in news_articles %}
+                <li style="margin-bottom:18px;">
+                    <a href="{{ article.url }}" target="_blank" style="font-weight:600; color:#d72631; text-decoration:none;">
+                        {{ article.title }}
+                    </a>
+                    <br>
+                    <span style="font-size:0.95em; color:#555;">{{ article.source.name }} | {{ article.publishedAt[:10] }}</span>
+                    <p style="margin:6px 0 0 0; color:#222;">{{ article.description }}</p>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
     <footer>
-        <p>&copy; 2025 StockViz</p>
+        &copy; 2025 StockViz &mdash; Powered by Yahoo Finance
     </footer>
 </body>
 </html>

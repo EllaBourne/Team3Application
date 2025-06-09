@@ -1,1 +1,27 @@
-<!DOCTYPE html><html lang="en"><head>    <meta charset="UTF-8">    <meta name="viewport" content="width=device-width, initial-scale=1.0">    <title>StockViz</title>    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"></head><body>    <header>        <h1>Welcome to StockViz</h1>    </header>    <main class="container">        <p>Enter a stock symbol (e.g., AAPL, MSFT, TSLA) to view its 10-year historical data:</p>        <form action="{{ url_for('stock') }}" method="post">            <input type="text" name="stock_symbol" placeholder="Stock Symbol" required>            <input type="submit" value="Show Graph">        </form>        {% if error %}            <p style="color: red;">{{ error }}</p>        {% endif %}    </main>    <footer>        <p>&copy; 2025 StockViz</p>    </footer>    <script src="{{ url_for('static', filename='js/main.js') }}"></script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>StockViz - Fintech Stock Viewer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>StockViz</h1>
+        <p style="font-size:1.2rem; margin:0;">Visualize 10 Years of Stock Data Instantly</p>
+    </header>
+    <div class="container">
+        <form action="{{ url_for('stock') }}" method="post">
+            <label for="stock_symbol" style="font-weight:600;">Enter Stock Symbol (e.g., AAPL, MSFT, TSLA):</label>
+            <input type="text" name="stock_symbol" id="stock_symbol" placeholder="Stock Symbol" required>
+            <input type="submit" value="Show Graph">
+        </form>
+        {% if error %}
+            <div class="error">{{ error }}</div>
+        {% endif %}
+    </div>
+    <footer>
+        &copy; 2025 StockViz &mdash; Powered by Yahoo Finance
+    </footer>
+</body>
+</html>
