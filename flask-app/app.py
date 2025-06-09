@@ -37,32 +37,24 @@ def stock():
         data = yf.download(stock_symbol, start=start_date.strftime('%Y-%m-%d'), end=end_date.strftime('%Y-%m-%d'))
         if data.empty:
             raise ValueError("No data found for this symbol.")
-        # Prepare data for Highcharts: list of [timestamp, close]
-        chart_data = []
-        for date, row in data.iterrows():
-            timestamp = int(date.timestamp() * 1000)
-            chart_data.append([timestamp, float(row['Close'])])
+        plt.figure(figsize=(10, 5))
+        plt.plot(data['Close'], color='#0033a0')
+        plt.title(f'Historical Stock Prices for {stock_symbol} (10 Years)')
+        plt.xlabel('Date')
+        plt.ylabel('Price (USD)')
+        plt.grid(True, color='#d72631', linestyle='--', linewidth=0.5)
+        graph_filename = f'{stock_symbol}_graph.png'
+        graph_path = os.path.join('static', graph_filename)
+        plt.tight_layout()
+        plt.savefig(graph_path)
+        plt.close()
         # Fetch news articles
         news_articles = get_stock_news(stock_symbol)
-        # Add AI-generated news summary
-        try:
-            from helpers import generate_natural_language_summary
-        except ImportError:
-            import importlib.util
-            import sys
-            helpers_path = os.path.join(os.path.dirname(__file__), 'helpers.py')
-            spec = importlib.util.spec_from_file_location('helpers', helpers_path)
-            helpers = importlib.util.module_from_spec(spec)
-            sys.modules['helpers'] = helpers
-            spec.loader.exec_module(helpers)
-            generate_natural_language_summary = helpers.generate_natural_language_summary
-        nl_summary = generate_natural_language_summary(news_articles, stock_symbol) if news_articles else None
         return render_template(
             'stock.html',
             stock_symbol=stock_symbol,
-            chart_data=chart_data,
-            news_articles=news_articles,
-            nl_summary=nl_summary
+            graph_filename=graph_filename,
+            news_articles=news_articles
         )
     except Exception as e:
         error = f"Error: {str(e)}"
