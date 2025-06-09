@@ -37,23 +37,17 @@ def stock():
         data = yf.download(stock_symbol, start=start_date.strftime('%Y-%m-%d'), end=end_date.strftime('%Y-%m-%d'))
         if data.empty:
             raise ValueError("No data found for this symbol.")
-        plt.figure(figsize=(10, 5))
-        plt.plot(data['Close'], color='#0033a0')
-        plt.title(f'Historical Stock Prices for {stock_symbol} (10 Years)')
-        plt.xlabel('Date')
-        plt.ylabel('Price (USD)')
-        plt.grid(True, color='#d72631', linestyle='--', linewidth=0.5)
-        graph_filename = f'{stock_symbol}_graph.png'
-        graph_path = os.path.join('static', graph_filename)
-        plt.tight_layout()
-        plt.savefig(graph_path)
-        plt.close()
+        # Prepare data for Highcharts: list of [timestamp, close]
+        chart_data = []
+        for date, row in data.iterrows():
+            timestamp = int(date.timestamp() * 1000)
+            chart_data.append([timestamp, float(row['Close'])])
         # Fetch news articles
         news_articles = get_stock_news(stock_symbol)
         return render_template(
             'stock.html',
             stock_symbol=stock_symbol,
-            graph_filename=graph_filename,
+            chart_data=chart_data,
             news_articles=news_articles
         )
     except Exception as e:

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>{{ stock_symbol }} - StockViz</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://code.highcharts.com/highcharts.js"></script>
 </head>
 <body>
     <header>
@@ -11,7 +12,8 @@
         <p style="font-size:1.1rem; margin:0;">10-Year Historical Price (USD)</p>
     </header>
     <div class="container" style="text-align:center;">
-        <img class="stock-graph" src="{{ url_for('static', filename=graph_filename) }}" alt="Stock Graph for {{ stock_symbol }}">
+        <!-- Replace static image with interactive chart -->
+        <div id="stock-chart" style="margin:0 auto; max-width:800px;"></div>
         <br>
         <a href="{{ url_for('home') }}"><button style="margin-top:24px;">Back to Search</button></a>
         {% if news_articles %}
@@ -35,5 +37,24 @@
     <footer>
         &copy; 2025 StockViz &mdash; Powered by Yahoo Finance
     </footer>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        Highcharts.chart('stock-chart', {
+            chart: { type: 'line' },
+            title: { text: 'Historical Stock Prices for {{ stock_symbol }} (10 Years)' },
+            xAxis: {
+                type: 'datetime',
+                title: { text: 'Date' }
+            },
+            yAxis: {
+                title: { text: 'Price (USD)' }
+            },
+            series: [{
+                name: '{{ stock_symbol }}',
+                data: {{ chart_data | tojson }}
+            }]
+        });
+    });
+    </script>
 </body>
 </html>
