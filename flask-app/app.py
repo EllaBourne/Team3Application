@@ -12,7 +12,7 @@ NEWS_API_KEY = 'd4b6777932da4e32ba9d8972d1aa7984'  # Replace with your actual ke
 def get_stock_news(stock_symbol):
     url = (
         f"https://newsapi.org/v2/everything?"
-        f"q={stock_symbol}&"
+        f"q={stock_symbol} stock news&"
         f"sortBy=publishedAt&"
         f"language=en&"
         f"apiKey={NEWS_API_KEY}"
