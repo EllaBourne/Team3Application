@@ -7,17 +7,16 @@ body {
 }
 
 header {
-    background: linear-gradient(90deg, #0033a0 60%, #d72631 100%);
+    background: linear-gradient(135deg, #0033a0, #4e44bc);
     color: #fff;
-    padding: 32px 0 16px 0;
+    padding: 20px 0 10px 0;
     text-align: center;
     box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
 h1 {
-    margin: 0 0 8px 0;
+    margin: 0 0 2px 0;
     font-size: 2.5rem;
-    letter-spacing: 2px;
 }
 
 .container {
@@ -39,13 +38,13 @@ input[type="text"] {
     padding: 12px;
     border: 1px solid #0033a0;
     border-radius: 6px;
-    font-size: 1.1rem;
+    font-size: 0.9rem;
     outline: none;
     transition: border 0.2s;
 }
 
 input[type="text"]:focus {
-    border: 1.5px solid #d72631;
+    border: 1.5px solid #4e44bc;
 }
 
 input[type="submit"], button {
@@ -54,14 +53,14 @@ input[type="submit"], button {
     border: none;
     padding: 12px 0;
     border-radius: 6px;
-    font-size: 1.1rem;
-    font-weight: 600;
+    font-size: 0.9rem;
+    font-weight: 400;
     cursor: pointer;
     transition: background 0.4s, color 0.4s;
 }
 
 input[type="submit"]:hover, button:hover {
-    background: #d72631;
+    background: #4e44bc;
     color: #fff;
 }
 
@@ -82,11 +81,10 @@ input[type="submit"]:hover, button:hover {
 }
 
 footer {
-    background: #0033a0;
-    color: #fff;
+    background: #dee4e8;
+    color: #7c8597;
     text-align: center;
     padding: 20px 0;
     margin-top: 40px;
-    font-size: 1rem;
-    letter-spacing: 1px;
+    font-size: 0.8rem;
 }
