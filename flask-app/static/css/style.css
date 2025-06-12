@@ -88,3 +88,21 @@ footer {
     margin-top: 40px;
     font-size: 0.8rem;
 }
+
+.nl-container {
+    width: 100%;
+    margin-bottom: 12px;
+    border-radius: 8px;
+    background: #f4f7fa;
+    padding: 14px 18px;
+    display: flex;
+    justify-content: center;
+    box-sizing: border-box;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.nl-summary {
+    font-size: 1.0em;
+    color:#222;
+}

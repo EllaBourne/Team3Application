@@ -20,11 +20,14 @@
         {% if news_articles %}
         <div style="margin-top:40px; text-align:left;">
             {% if nl_summary %}
-            <div class="nl-summary" style="margin-bottom:12px; color:#0033a0; font-size:1.08em;">
+            <div class="nl-container">
+                <div class="nl-summary" style=color:#222;">
                 <em>{{ nl_summary }}</em>
+                </div>
             </div>
+            
             {% endif %}
-            <h2 style="color:#0033a0;">Latest News</h2>
+            <h2 style="color:#0033a0; margin-block: 50px;">Latest News</h2>
             <ul style="list-style:none; padding:0;">
                 {% for article in news_articles %}
                 <li style="margin-bottom:18px;">
