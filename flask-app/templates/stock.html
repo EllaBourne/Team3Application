@@ -9,8 +9,8 @@
 </head>
 <body>
     <header>
-        <h1>{{ stock_symbol }} Stock Chart</h1>
-        <p style="font-size:1.1rem; margin:0;">10-Year Historical Price (USD)</p>
+        <h1 style="font-size: 1.5rem">{{ stock_symbol }} Stock Chart</h1>
+        <p style="font-size:0.9rem; margin:0; color: #82a9ff">10-Year Historical Price (USD)</p>
     </header>
     <div class="container" style="text-align:center;">
         <!-- Replace static image with interactive chart -->
@@ -28,7 +28,7 @@
             <ul style="list-style:none; padding:0;">
                 {% for article in news_articles %}
                 <li style="margin-bottom:18px;">
-                    <a href="{{ article.url }}" target="_blank" style="font-weight:600; color:#d72631; text-decoration:none;">
+                    <a href="{{ article.url }}" target="_blank" style="font-weight:600; color:#3866cb; text-decoration:none;">
                         {{ article.title }}
                     </a>
                     <br>

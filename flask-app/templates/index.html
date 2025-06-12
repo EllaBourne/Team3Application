@@ -34,7 +34,6 @@
             width: 100%;
             text-align: center;
             padding: 10px 0;
-            background: #0033a0;
             margin-top: auto;
         }
     </style>
@@ -51,8 +50,8 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 <body>
     <header>
-        <h1>StockWiz</h1>
-        <p style="font-size:1.2rem; margin:0;">Visualize 10 Years of Stock Data Instantly</p>
+        <h1 style="font-size: 1.5rem">StockWiz</h1>
+        <p style="font-size:0.9rem; margin:0; color:#82a9ff">Visualize 10 Years of Stock Data Instantly</p>
     </header>
     <div class="container">
         <form action="{{ url_for('stock') }}" method="post">
