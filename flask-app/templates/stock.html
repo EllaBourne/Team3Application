@@ -4,36 +4,53 @@
     <meta charset="UTF-8">
     <title>{{ stock_symbol }} - StockWiz</title>
     <link rel="stylesheet" href="{{ request.url_for('static', path='css/style.css') }}">
-    <!-- Use Highcharts Stock instead of regular Highcharts -->
     <script src="https://code.highcharts.com/stock/highstock.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
-    <header>
-        <h1>{{ stock_symbol }} Stock Chart</h1>
-        <p style="font-size:1.1rem; margin:0;">10-Year Historical Price (USD)</p>
+    <!-- Toggle button in its own fixed container -->
+    <div class="toggle-btn-container">
+        <button class="toggle-btn" id="toggleModeBtn" title="Toggle light/dark mode">
+            <span id="toggleIcon">🌙</span>
+        </button>
+    </div>
+    <header class="main-header">
+        <div class="header-content">
+            <div class="header-title">
+                <span class="logo-dot"></span>
+                <span class="logo-text">{{ stock_symbol }} Stock Chart</span>
+            </div>
+        </div>
     </header>
+    <p class="header-desc">10-Year Historical Price (USD)</p>
     <div class="container" style="text-align:center;">
-        <!-- Replace static image with interactive chart -->
-        <div id="stock-chart" style="margin:0 auto; max-width:100%;"></div>
-        <br>
-        <a href="{{ url_for('home') }}"><button style="margin-top:24px; padding-inline: 10px;">Back to Search</button></a>
+        <div id="stock-chart" style="margin:0 auto; width:90vw; max-width:1100px; min-width:320px; height:420px;"></div>
+        <div style="margin-top:24px; display:flex; justify-content:center; gap:16px; flex-wrap:wrap;">
+            <form action="{{ request.url_for('home') }}" method="get" style="display:inline;">
+                <button type="submit" class="home-btn">⬅️ Back to Search</button>
+            </form>
+            <form method="post" action="{{ request.url_for('report') }}" style="display:inline;">
+                <input type="hidden" name="stock_symbol" value="{{ stock_symbol }}">
+                <button type="submit" class="home-btn danger">View Full Report</button>
+            </form>
+        </div>
         {% if news_articles %}
-        <div style="margin-top:40px; text-align:left;">
+        <div class="card" style="margin-top:40px; text-align:left;">
             {% if nl_summary %}
-            <div class="nl-summary" style="margin-bottom:12px; color:#0033a0; font-size:1.08em;">
+            <div class="nl-summary" style="margin-bottom:12px; color:var(--primary); font-size:1.08em;">
                 <em>{{ nl_summary }}</em>
             </div>
             {% endif %}
-            <h2 style="color:#0033a0;">Latest News</h2>
+            <h2 class="section-title">Latest News</h2>
             <ul style="list-style:none; padding:0;">
                 {% for article in news_articles %}
                 <li style="margin-bottom:18px;">
-                    <a href="{{ article.url }}" target="_blank" style="font-weight:600; color:#d72631; text-decoration:none;">
+                    <a href="{{ article.url }}" target="_blank" style="font-weight:600; color:var(--accent); text-decoration:none;">
                         {{ article.title }}
                     </a>
                     <br>
-                    <span style="font-size:0.95em; color:#555;">{{ article.source.name }} | {{ article.publishedAt[:10] }}</span>
-                    <p style="margin:6px 0 0 0; color:#222;">{{ article.description }}</p>
+                    <span style="font-size:0.95em; color:#888;">{{ article.source.name }} | {{ article.publishedAt[:10] }}</span>
+                    <p style="margin:6px 0 0 0; color:inherit;">{{ article.description }}</p>
                 </li>
                 {% endfor %}
             </ul>
@@ -44,33 +61,61 @@
         2025 StockWiz &mdash; Powered by Yahoo Finance
     </footer>
     <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        Highcharts.stockChart('stock-chart', {
-            chart: { type: 'line' },
-            title: { text: 'Historical Stock Prices for {{ stock_symbol }} (10 Years)' },
+    // Light/Dark mode toggle
+    const toggleBtn = document.getElementById('toggleModeBtn');
+    const toggleIcon = document.getElementById('toggleIcon');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    function setMode(dark) {
+        if (dark) {
+            document.body.classList.add('dark-mode');
+            toggleIcon.textContent = '☀️';
+        } else {
+            document.body.classList.remove('dark-mode');
+            toggleIcon.textContent = '🌙';
+        }
+        sessionStorage.setItem('darkMode', dark ? '1' : '0');
+    }
+    function getChartOptions() {
+        const dark = document.body.classList.contains('dark-mode');
+        return {
+            chart: {
+                type: 'line',
+                backgroundColor: 'transparent'
+            },
+            title: {
+                text: 'Historical Stock Prices for {{ stock_symbol }} (10 Years)',
+                style: { color: dark ? '#b3baff' : 'var(--primary)' }
+            },
             xAxis: {
                 type: 'datetime',
-                title: { text: 'Date' }
+                title: { text: 'Date', style: { color: dark ? '#b3baff' : 'inherit' } },
+                labels: { style: { color: dark ? '#b3baff' : 'inherit' } },
+                gridLineColor: dark ? '#353945' : '#e6e8ec'
             },
             yAxis: {
-                title: { text: 'Price (USD)' }
+                title: { text: 'Price (USD)', style: { color: dark ? '#b3baff' : 'inherit' } },
+                labels: { style: { color: dark ? '#b3baff' : 'inherit' } },
+                gridLineColor: dark ? '#353945' : '#e6e8ec'
             },
-            navigator: {
-                enabled: false
-            },
-            series: [
-                {
-                    name: "{{ stock_symbol }}",
-                    data: {{ chart_data|tojson|safe }},
-                    color: "#0033a0",
-                    tooltip: {
-                        valueDecimals: 2,
-                        valuePrefix: "$"
-                    }
-                }
-            ]
-        });
-    });
+            series: [{
+                name: "{{ stock_symbol }}",
+                data: {{ chart_data|tojson|safe }},
+                color: dark ? "#b3baff" : "#0033a0",
+                lineWidth: 3,
+                marker: { enabled: false }
+            }],
+            credits: { enabled: false }
+        };
+    }
+    function renderChart() {
+        Highcharts.stockChart('stock-chart', getChartOptions());
+    }
+    toggleBtn.onclick = () => {
+        setMode(!document.body.classList.contains('dark-mode'));
+        setTimeout(renderChart, 200);
+    };
+    setMode(sessionStorage.getItem('darkMode') === '1' || (sessionStorage.getItem('darkMode') === null && prefersDark));
+    document.addEventListener('DOMContentLoaded', renderChart);
     </script>
 </body>
 </html>

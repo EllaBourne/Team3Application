@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ stock_symbol }} Report - StockWiz</title>
+    <link rel="stylesheet" href="{{ request.url_for('static', path='css/style.css') }}">
+    <script src="https://code.highcharts.com/stock/highstock.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+    <header class="main-header">
+        <div class="header-content">
+            <div class="header-title">
+                <span class="logo-dot"></span>
+                <span class="logo-text">{{ company_name }} <span style="font-weight:400;">({{ stock_symbol }})</span></span>
+            </div>
+            <div class="toggle-btn-container">
+                <button class="toggle-btn" id="toggleModeBtn" title="Toggle light/dark mode">
+                    <span id="toggleIcon">🌙</span>
+                </button>
+            </div>
+            <div>
+                <button class="print-btn" onclick="window.print()" title="Print or Save PDF">🖨️</button>
+            </div>
+        </div>
+        <p class="header-desc">Comprehensive Stock Report</p>
+    </header>
+    <div class="container">
+        <div class="card">
+            <h2 class="section-title">Key Statistics</h2>
+            <table class="stat-table">
+                <tr><th>Current Price</th><td>{{ current_price or "N/A" }}</td></tr>
+                <tr><th>Market Cap</th><td>{{ market_cap }}</td></tr>
+                <tr><th>P/E Ratio</th><td>{{ pe_ratio }}</td></tr>
+                <tr><th>52-Week High</th><td>{{ week_high }}</td></tr>
+                <tr><th>52-Week Low</th><td>{{ week_low }}</td></tr>
+                <tr><th>Dividend Yield</th><td>{{ dividend_yield }}</td></tr>
+                <tr><th>EPS</th><td>{{ eps }}</td></tr>
+                <tr><th>Beta</th><td>{{ beta }}</td></tr>
+                <tr><th>Volume</th><td>{{ volume }}</td></tr>
+                <tr><th>Target Price</th><td>{{ target_price }}</td></tr>
+                <tr><th>Analyst Recommendation</th>
+                    <td>
+                        {% if analyst_rating %}
+        <span class="{% if 'buy' in analyst_rating|lower %}positive{% elif 'sell' in analyst_rating|lower %}negative{% endif %}">
+            {{ analyst_rating|capitalize }}
+        </span>
+    {% else %}
+        N/A
+    {% endif %}
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div class="card">
+            <h2 class="section-title">Company Profile</h2>
+            <div style="padding: 18px 24px;">
+                <p><strong>Name:</strong> {{ company_name or "N/A" }}</p>
+                <p><strong>Sector:</strong> {{ sector or "N/A" }}</p>
+                <p><strong>Industry:</strong> {{ industry or "N/A" }}</p>
+                <p><strong>Website:</strong>
+                    {% if website %}
+                        <a href="{{ website }}" target="_blank">{{ website }}</a>
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </p>
+                <p><strong>Description:</strong><br>
+                    {{ description or "N/A" }}
+                </p>
+            </div>
+        </div>
+        <div class="card">
+            <h2 class="section-title">Price Chart (1 Year)</h2>
+            <div id="stock-chart" style="margin:32px auto; max-width:100%;"></div>
+        </div>
+        {% if nl_summary %}
+        <div class="card">
+            <h2 class="section-title">AI Summary</h2>
+            <div class="nl-summary" style="margin-bottom:12px; color:var(--primary); font-size:1.08em;">
+                <em>{{ nl_summary }}</em>
+            </div>
+        </div>
+        {% endif %}
+        {% if ai_recommendation %}
+        <div class="card">
+            <h2 class="section-title">Junior AI Analyst Recommendation</h2>
+            <p style="font-size:1.15em;">{{ ai_recommendation }}</p>
+            {% if reasoning_blurb %}
+                <div class="nl-summary" style="margin-top:18px; color:var(--primary); font-size:1.08em;">
+                    <em>Reasoning: {{ reasoning_blurb }}</em>
+                </div>
+            {% endif %}
+        </div>
+        {% endif %}
+        <div class="card">
+            <h2 class="section-title">Latest News</h2>
+            <ul style="list-style:none; padding:0;">
+                {% for article in news_articles %}
+                <li style="margin-bottom:18px;">
+                    <a href="{{ article.url }}" target="_blank" style="font-weight:600; color:var(--accent); text-decoration:none;">
+                        {{ article.title }}
+                    </a>
+                    <br>
+                    <span style="font-size:0.95em; color:#888;">{{ article.source.name }} | {{ article.publishedAt[:10] }}</span>
+                    <p style="margin:6px 0 0 0; color:inherit;">{{ article.description }}</p>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="card">
+            <h2 class="section-title">Trader Notes</h2>
+            <textarea rows="5" placeholder="Add your notes here..."></textarea>
+        </div>
+        <form action="{{ request.url_for('home') }}" method="get">
+            <button type="submit" class="home-btn">
+                ⬅️ Return to Homepage
+            </button>
+        </form>
+    </div>
+    <footer>
+        2025 StockWiz &mdash; Powered by Yahoo Finance
+    </footer>
+    <script>
+const toggleBtn = document.getElementById('toggleModeBtn');
+const toggleIcon = document.getElementById('toggleIcon');
+const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+function setMode(dark) {
+    if (dark) {
+        document.body.classList.add('dark-mode');
+        toggleIcon.textContent = '☀️';
+    } else {
+        document.body.classList.remove('dark-mode');
+        toggleIcon.textContent = '🌙';
+    }
+    sessionStorage.setItem('darkMode', dark ? '1' : '0');
+}
+function getChartOptions() {
+    const dark = document.body.classList.contains('dark-mode');
+    return {
+        chart: { type: 'line', backgroundColor: 'transparent' },
+        title: { text: '1-Year Price Chart for {{ stock_symbol }}', style: { color: dark ? '#b3baff' : 'var(--primary)' } },
+        xAxis: {
+            type: 'datetime',
+            title: { text: 'Date', style: { color: dark ? '#b3baff' : 'inherit' } },
+            labels: { style: { color: dark ? '#b3baff' : 'inherit' } },
+            gridLineColor: dark ? '#353945' : '#e6e8ec'
+        },
+        yAxis: {
+            title: { text: 'Price (USD)', style: { color: dark ? '#b3baff' : 'inherit' } },
+            labels: { style: { color: dark ? '#b3baff' : 'inherit' } },
+            gridLineColor: dark ? '#353945' : '#e6e8ec'
+        },
+        navigator: { enabled: false },
+        rangeSelector: { enabled: false },
+        legend: { enabled: false },
+        series: [{
+            name: "{{ stock_symbol }}",
+            data: {{ chart_data|tojson|safe }},
+            color: dark ? "#b3baff" : "#0033a0",
+            lineWidth: 3,
+            tooltip: {
+                valueDecimals: 2,
+                valuePrefix: "$"
+            }
+        }],
+        credits: { enabled: false }
+    };
+}
+function renderChart() {
+    Highcharts.stockChart('stock-chart', getChartOptions());
+}
+toggleBtn.onclick = () => {
+    setMode(!document.body.classList.contains('dark-mode'));
+    setTimeout(renderChart, 200);
+};
+setMode(sessionStorage.getItem('darkMode') === '1' || (sessionStorage.getItem('darkMode') === null && prefersDark));
+document.addEventListener('DOMContentLoaded', renderChart);
+</script>
+</body>
+</html>
