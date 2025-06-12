@@ -1,11 +1,17 @@
-from flask import Flask, render_template, request
+from fastapi import FastAPI, Request, Form
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 import matplotlib.pyplot as plt
 import os
 from datetime import datetime, timedelta
 import yfinance as yf
 import requests
 
-app = Flask(__name__)
+app = FastAPI()
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
 
 NEWS_API_KEY = 'd4b6777932da4e32ba9d8972d1aa7984'  # Replace with your actual key
 
@@ -23,14 +29,13 @@ def get_stock_news(stock_symbol):
         return articles
     return []
 
-@app.route('/', methods=['GET', 'POST'])
-def home():
-    error = None
-    return render_template('index.html', error=error)
+@app.get("/", response_class=HTMLResponse)
+async def home(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request, "error": None})
 
-@app.route('/stock', methods=['POST'])
-def stock():
-    stock_symbol = request.form['stock_symbol'].upper().strip()
+@app.post("/stock", response_class=HTMLResponse)
+async def stock(request: Request, stock_symbol: str = Form(...)):
+    stock_symbol = stock_symbol.upper().strip()
     end_date = datetime.today()
     start_date = end_date - timedelta(days=365*10)
     try:
@@ -72,17 +77,19 @@ def stock():
                     chart_data.append([timestamp, close_val])
             except Exception:
                 continue
-        return render_template(
-            'stock.html',
-            stock_symbol=stock_symbol,
-            graph_filename=graph_filename,
-            news_articles=news_articles,
-            nl_summary=nl_summary,
-            chart_data=chart_data
+        return templates.TemplateResponse(
+            "stock.html",
+            {
+                "request": request,
+                "stock_symbol": stock_symbol,
+                "graph_filename": graph_filename,
+                "news_articles": news_articles,
+                "nl_summary": nl_summary,
+                "chart_data": chart_data,
+            }
         )
     except Exception as e:
         error = f"Error: {str(e)}"
-        return render_template('index.html', error=error)
+        return templates.TemplateResponse("index.html", {"request": request, "error": error})
 
-if __name__ == '__main__':
-    app.run(debug=True)
+# To run: uvicorn app:app --reload

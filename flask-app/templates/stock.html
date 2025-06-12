@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>{{ stock_symbol }} - StockWiz</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ request.url_for('static', path='css/style.css') }}">
     <!-- Use Highcharts Stock instead of regular Highcharts -->
     <script src="https://code.highcharts.com/stock/highstock.js"></script>
 </head>
