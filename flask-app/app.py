@@ -42,7 +42,7 @@ async def stock(request: Request, stock_symbol: str = Form(...)):
     start_date = end_date - timedelta(days=365*10)
     try:
         data = yf.download(stock_symbol, start=start_date.strftime('%Y-%m-%d'), end=end_date.strftime('%Y-%m-%d'))
-        if data.empty:
+        if data is None or data.empty:
             raise ValueError("No data found for this symbol.")
         plt.figure(figsize=(10, 5))
         plt.plot(data['Close'], color='#0033a0')
@@ -82,15 +82,20 @@ async def stock(request: Request, stock_symbol: str = Form(...)):
         # Prepare data for regression
         data = data.reset_index()
         data['timestamp'] = data['Date'].map(lambda x: x.timestamp())
-        X = data['timestamp'].values.reshape(-1, 1)
-        y = data['Close'].values
+        X = np.array(data['timestamp'].values).reshape(-1, 1)
+        y = np.array(data['Close'].values)
 
-        # Train linear regression
+        # Assign higher weights to more recent data
+        # Example: linearly increasing weights from 1 (oldest) to 3 (most recent)
+        n = len(data)
+        sample_weight = np.linspace(1, 3, n)
+
+        # Train linear regression with sample weights
         model = LinearRegression()
-        model.fit(X, y)
+        model.fit(X, y, sample_weight=sample_weight)
 
-        # Predict for the next N days (e.g., 30 days)
-        future_days = 30
+        # Predict for the next N days (e.g., 180 days)
+        future_days = 180
         last_timestamp = X[-1][0]
         one_day = 24 * 60 * 60
         future_timestamps = np.array([last_timestamp + i * one_day for i in range(1, future_days + 1)]).reshape(-1, 1)
@@ -98,6 +103,19 @@ async def stock(request: Request, stock_symbol: str = Form(...)):
 
         # Prepare predicted data for Highcharts
         predicted_data = [[int(ts[0] * 1000), float(pred)] for ts, pred in zip(future_timestamps, future_preds)]
+        dcf_fair_value = simple_dcf_valuation(stock_symbol)
+
+        latest_close = chart_data[-1][1] if chart_data else None
+
+        if dcf_fair_value and latest_close:
+            valuation_diff = dcf_fair_value - latest_close
+            valuation_pct = (valuation_diff / latest_close) * 100
+            valuation_status = "undervalued" if valuation_diff > 0 else "overvalued"
+        else:
+            valuation_diff = None
+            valuation_pct = None
+            valuation_status = None
+
         return templates.TemplateResponse(
             "stock.html",
             {
@@ -107,11 +125,81 @@ async def stock(request: Request, stock_symbol: str = Form(...)):
                 "news_articles": news_articles,
                 "nl_summary": nl_summary,
                 "chart_data": chart_data,
-                "predicted_data": predicted_data,  # <-- Add this line
+                "predicted_data": predicted_data,
+                "dcf_fair_value": dcf_fair_value,
+                "latest_close": latest_close,
+                "valuation_diff": valuation_diff,
+                "valuation_pct": valuation_pct,
+                "valuation_status": valuation_status,
             }
         )
     except Exception as e:
         error = f"Error: {str(e)}"
         return templates.TemplateResponse("index.html", {"request": request, "error": error})
+
+def simple_dcf_valuation(ticker, years=5, discount_rate=0.10, perpetual_growth=0.025):
+    """
+    Returns estimated fair value per share using a simple DCF model.
+    """
+    stock = yf.Ticker(ticker)
+    try:
+        cashflow = stock.cashflow
+
+        # Try both possible row names for operating cash flow
+        op_cash_row = None
+        for possible in ['Total Cash From Operating Activities', 'Operating Cash Flow']:
+            if possible in cashflow.index:
+                op_cash_row = possible
+                break
+
+        capex_row = None
+        for possible in ['Capital Expenditures', 'Capital Expenditure']:
+            if possible in cashflow.index:
+                capex_row = possible
+                break
+
+        if op_cash_row is None or capex_row is None or cashflow.shape[1] == 0:
+            print(f"Missing required cashflow rows for {ticker}: {cashflow.index}")
+            return None  # Not enough data
+
+        op_cash = cashflow.loc[op_cash_row][0]
+        capex = cashflow.loc[capex_row][0]
+        if np.isnan(op_cash) or np.isnan(capex):
+            print(f"NaN values in cashflow for {ticker}: op_cash={op_cash}, capex={capex}")
+            return None  # Missing values
+
+        fcf = float(op_cash) - float(capex)
+    except Exception as e:
+        print(f"Exception in DCF cashflow for {ticker}: {e}")
+        return None  # Not enough data
+
+    # Estimate future FCFs with a simple growth assumption (e.g., 5% per year)
+    fcf_growth = 0.05
+    projected_fcfs = [fcf * ((1 + fcf_growth) ** i) for i in range(1, years + 1)]
+
+    # Discount future FCFs to present value
+    discounted_fcfs = [fcf / ((1 + discount_rate) ** i) for i, fcf in enumerate(projected_fcfs, 1)]
+
+    # Terminal value (Gordon Growth Model)
+    terminal_value = projected_fcfs[-1] * (1 + perpetual_growth) / (discount_rate - perpetual_growth)
+    discounted_terminal = terminal_value / ((1 + discount_rate) ** years)
+
+    # Enterprise value
+    dcf_value = sum(discounted_fcfs) + discounted_terminal
+
+    # Get shares outstanding
+    try:
+        shares_outstanding = stock.info.get('sharesOutstanding', None)
+        if not shares_outstanding or shares_outstanding == 0:
+            print(f"Shares outstanding missing or zero for {ticker}: {shares_outstanding}")
+            return None
+    except Exception as e:
+        print(f"Exception in DCF shares outstanding for {ticker}: {e}")
+        return None
+
+    # Fair value per share
+    fair_value_per_share = dcf_value / shares_outstanding
+    print(f"DCF fair value for {ticker}: {fair_value_per_share}")
+    return round(fair_value_per_share, 2)
 
 # To run: uvicorn app:app --reload
