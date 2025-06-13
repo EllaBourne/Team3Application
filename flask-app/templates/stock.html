@@ -70,6 +70,16 @@
                         valueDecimals: 2,
                         valuePrefix: "$"
                     }
+                },
+                {
+                    name: "{{ stock_symbol }} Predicted",
+                    data: {{ predicted_data|tojson|safe }},
+                    color: "#82a9ff",
+                    dashStyle: "Dash",
+                    tooltip: {
+                        valueDecimals: 2,
+                        valuePrefix: "$"
+                    }
                 }
             ]
         });

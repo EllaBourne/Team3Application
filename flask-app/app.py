@@ -7,6 +7,8 @@ import os
 from datetime import datetime, timedelta
 import yfinance as yf
 import requests
+from sklearn.linear_model import LinearRegression
+import numpy as np
 
 app = FastAPI()
 
@@ -77,6 +79,25 @@ async def stock(request: Request, stock_symbol: str = Form(...)):
                     chart_data.append([timestamp, close_val])
             except Exception:
                 continue
+        # Prepare data for regression
+        data = data.reset_index()
+        data['timestamp'] = data['Date'].map(lambda x: x.timestamp())
+        X = data['timestamp'].values.reshape(-1, 1)
+        y = data['Close'].values
+
+        # Train linear regression
+        model = LinearRegression()
+        model.fit(X, y)
+
+        # Predict for the next N days (e.g., 30 days)
+        future_days = 30
+        last_timestamp = X[-1][0]
+        one_day = 24 * 60 * 60
+        future_timestamps = np.array([last_timestamp + i * one_day for i in range(1, future_days + 1)]).reshape(-1, 1)
+        future_preds = model.predict(future_timestamps)
+
+        # Prepare predicted data for Highcharts
+        predicted_data = [[int(ts[0] * 1000), float(pred)] for ts, pred in zip(future_timestamps, future_preds)]
         return templates.TemplateResponse(
             "stock.html",
             {
@@ -86,6 +107,7 @@ async def stock(request: Request, stock_symbol: str = Form(...)):
                 "news_articles": news_articles,
                 "nl_summary": nl_summary,
                 "chart_data": chart_data,
+                "predicted_data": predicted_data,  # <-- Add this line
             }
         )
     except Exception as e:
