@@ -4,84 +4,83 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>StockWiz - Fintech Stock Viewer</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <style>
-        html, body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-        }
-        body {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        .container {
-            width: auto;
-            max-width: 600px;
-            margin: 30px auto 0 auto;
-            padding: 20px;
-            box-sizing: border-box;
-            background: #fff;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            flex: 0 0 auto;
-        }
-        footer {
-            width: 100%;
-            text-align: center;
-            padding: 10px 0;
-            margin-top: auto;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ request.url_for('static', path='css/style.css') }}">
 </head>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  const form = document.querySelector('form');
-  if (form) {
-    form.addEventListener('submit', function() {
-      document.getElementById('loading-overlay').style.display = 'flex';
-    });
-  }
-});
-</script>
 <body>
-    <header>
-        <h1 style="font-size: 1.5rem">StockWiz</h1>
-        <p style="font-size:0.9rem; margin:0; color:#82a9ff">Visualize 10 Years of Stock Data Instantly</p>
+    <div class="toggle-btn-container">
+        <button class="toggle-btn" id="toggleModeBtn" title="Toggle light/dark mode">
+            <span id="toggleIcon">🌙</span>
+        </button>
+    </div>
+    <header class="main-header" style="box-shadow: 0 8px 32px 0 rgba(31,38,135,0.13);">
+        <div class="header-content">
+            <div class="header-title">
+                <span class="logo-dot"></span>
+                <span class="logo-text">StockWiz</span>
+            </div>
+        </div>
+        <p class="header-desc">Visualize 10 Years of Stock Data Instantly</p>
     </header>
-    <div class="container">
-        <form action="{{ url_for('stock') }}" method="post">
-            <label for="stock_symbol" style="font-weight:600;">Enter Stock Symbol (e.g., AAPL, MSFT, TSLA):</label>
-            <input type="text" name="stock_symbol" id="stock_symbol" placeholder="Stock Symbol" required>
-            <input type="submit" value="Show Graph">
-        </form>
-        {% if error %}
-            <div class="error">{{ error }}</div>
-        {% endif %}
+    <div class="container" style="margin-top:32px;">
+        <div class="card">
+            <form action="{{ request.url_for('stock') }}" method="post" style="width:100%;max-width:400px;margin:auto;">
+                <label for="stock_symbol" style="font-weight:600;">Enter Stock Symbol (e.g., AAPL, MSFT, TSLA):</label>
+                <input type="text" name="stock_symbol" id="stock_symbol" placeholder="Stock Symbol" required style="width:100%;margin:12px 0 18px 0;padding:10px;border-radius:6px;border:1px solid var(--primary);font-size:1.1em;">
+                <input type="submit" value="Show Graph" style="width:100%;padding:10px;background:var(--primary);color:#fff;border:none;border-radius:6px;font-size:1.1em;cursor:pointer;">
+            </form>
+            {% if error %}
+                <div class="error" style="color:var(--accent);margin-top:18px;">{{ error }}</div>
+            {% endif %}
+        </div>
     </div>
     <div id="loading-overlay" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(255,255,255,0.8);z-index:9999;align-items:center;justify-content:center;">
-    <div>
-        <div class="spinner" style="border:8px solid #f3f3f3;border-top:8px solid #3498db;border-radius:50%;width:60px;height:60px;animation:spin 1s linear infinite;"></div>
-        <p>Loading...</p>
+        <div>
+            <div class="spinner" style="border:8px solid #f3f3f3;border-top:8px solid #3498db;border-radius:50%;width:60px;height:60px;animation:spin 1s linear infinite;"></div>
+            <p>Loading...</p>
+        </div>
     </div>
-    </div>
-    <style>
-    @keyframes spin {
-    0% { transform: rotate(0deg);}
-    100% { transform: rotate(360deg);}
-    }
-    </style>
-    <footer style="">
+    <footer>
         <p>2025 StockWiz &mdash; Powered by Yahoo Finance</p>
     </footer>
+    <style>
+    @keyframes spin {
+        0% { transform: rotate(0deg);}
+        100% { transform: rotate(360deg);}
+    }
+    .logo-dot {
+        background: linear-gradient(135deg, #6c63ff, #d72631);
+    }
+    </style>
     <script>
-    window.addEventListener('pageshow', function() {
-      document.getElementById('loading-overlay').style.display = 'none';
+    // Loading overlay
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function() {
+                document.getElementById('loading-overlay').style.display = 'flex';
+            });
+        }
+        window.addEventListener('pageshow', function() {
+            document.getElementById('loading-overlay').style.display = 'none';
+        });
     });
+
+    // Light/Dark mode toggle
+    const toggleBtn = document.getElementById('toggleModeBtn');
+    const toggleIcon = document.getElementById('toggleIcon');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    function setMode(dark) {
+        if (dark) {
+            document.body.classList.add('dark-mode');
+            toggleIcon.textContent = '☀️';
+        } else {
+            document.body.classList.remove('dark-mode');
+            toggleIcon.textContent = '🌙';
+        }
+        sessionStorage.setItem('darkMode', dark ? '1' : '0');
+    }
+    toggleBtn.onclick = () => setMode(!document.body.classList.contains('dark-mode'));
+    setMode(sessionStorage.getItem('darkMode') === '1' || (sessionStorage.getItem('darkMode') === null && prefersDark));
     </script>
 </body>
 </html>
