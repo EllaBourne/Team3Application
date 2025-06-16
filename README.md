@@ -24,6 +24,30 @@ Built with Python, Flask, and modern data science tools.
 
 ---
 
+## 🌟 What Makes This Application Complex & Cool
+
+This project stands out for its integration of advanced AI and data science techniques:
+
+- **AI-Powered News Summarization:**  
+  Uses Hugging Face Transformers (PyTorch backend) to generate concise, investor-focused news summaries. This leverages neural networks trained on vast datasets, providing context-aware, human-like text generation.
+
+- **Prompt Engineering:**  
+  Carefully crafted prompts guide the summarization model to produce actionable, relevant insights for investors, not just generic summaries. This demonstrates the power of prompt engineering in extracting domain-specific value from large language models.
+
+- **Quantitative Analysis:**  
+  Implements linear regression and DCF (Discounted Cash Flow) models for price prediction and valuation, blending classic finance with modern machine learning.
+
+- **PyTorch & Neural Networks:**  
+  The summarization pipeline runs on models built with PyTorch, a leading deep learning framework. This allows the app to harness state-of-the-art neural networks for natural language understanding.
+
+- **Seamless Integration:**  
+  Combines real-time data (via Yahoo Finance and NewsAPI), AI-driven insights, and interactive visualizations in a single, user-friendly dashboard.
+
+**In summary:**  
+This application is not just a CRUD app or static dashboard—it’s a showcase of how modern AI (transformers, neural networks, prompt engineering) can be combined with traditional finance and web development to deliver real, actionable intelligence for users.
+
+---
+
 ## 🏁 Getting Started
 
 ### 1. Clone the Repository
@@ -82,5 +106,3 @@ This project is for educational purposes.
 ---
 
 _Developed by Team 3 for Neueda Training 2025_
-
-
