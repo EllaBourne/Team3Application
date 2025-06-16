@@ -1,50 +1,16 @@
-from transformers import pipeline, BertTokenizer, BertForSequenceClassification
+from transformers import pipeline
 import numpy as np
-import torch
 
-# -----------------------
-# Summarizer Pipeline
-# -----------------------
+# Load once at the top of your helpers.py
 summarizer = pipeline("summarization", model="sshleifer/distilbart-cnn-12-6")
 
-# -----------------------
-# PyTorch Sentiment Model
-# -----------------------
-# Path can be a local dir or Hugging Face repo ID
-SENTIMENT_MODEL_PATH = "models/sentiment_model"  # Update as needed
+result = summarizer("Apple stock rose today after strong earnings.", max_length=50, min_length=10, do_sample=False)
+print(result[0]['summary_text'])
 
-try:
-    sentiment_tokenizer = BertTokenizer.from_pretrained(SENTIMENT_MODEL_PATH)
-    sentiment_model = BertForSequenceClassification.from_pretrained(SENTIMENT_MODEL_PATH)
-    sentiment_model.eval()
-    sentiment_label_map = {0: "Bearish", 1: "Neutral", 2: "Bullish"}
-except Exception as e:
-    print(f"[ERROR] Sentiment model load failed: {e}")
-    sentiment_tokenizer = sentiment_model = sentiment_label_map = None
-
-# -----------------------
-# News Sentiment Inference
-# -----------------------
-def classify_sentiment(text: str) -> str:
-    """
-    Classifies financial news as Bullish, Neutral, or Bearish using a fine-tuned BERT model.
-    """
-    if not sentiment_model or not sentiment_tokenizer:
-        return "Sentiment model not loaded."
-    
-    inputs = sentiment_tokenizer(text, return_tensors="pt", truncation=True, padding=True, max_length=512)
-    with torch.no_grad():
-        logits = sentiment_model(**inputs).logits
-        predicted_class = torch.argmax(logits, dim=1).item()
-    
-    return sentiment_label_map.get(predicted_class, "Unknown")
-
-# -----------------------
-# News Summary Generator
-# -----------------------
 def generate_natural_language_summary(articles, ticker=None):
     texts = []
-    for a in articles[:8]:
+    for a in articles[:8]:  # Use more articles if available
+        # Clean up content field
         content = a.get("content", "")
         if "[+" in content:
             content = content.split("[+")[0].strip()
@@ -53,7 +19,7 @@ def generate_natural_language_summary(articles, ticker=None):
     cleaned = " ".join(texts).strip()
     if not cleaned:
         return "No summary available."
-    cleaned = cleaned[:1500]
+    cleaned = cleaned[:1500]  # Truncate if needed
 
     prompt = (
         f"You are a senior financial analyst. Your task is to summarize the following recent news about {ticker or 'the stock'} for investors.\n\n"
@@ -64,6 +30,7 @@ def generate_natural_language_summary(articles, ticker=None):
         f"{cleaned}\n"
         "=== END NEWS ==="
     )
+
 
     input_length = len(cleaned.split())
     max_length = min(100, input_length + 10)
@@ -78,14 +45,13 @@ def generate_natural_language_summary(articles, ticker=None):
     )
     return summary[0]['summary_text']
 
-# -----------------------
-# Junior Analyst Recommendation Logic
-# -----------------------
 def junior_ai_analyst_recommendation(hist, pe_ratio, eps, analyst_rating, dividend_yield):
+    # Calculate 1-year return
     closes = np.array([row['Close'] for _, row in hist.iterrows()])
     if len(closes) < 2:
         return "Not enough data for AI recommendation."
     one_year_return = (closes[-1] - closes[0]) / closes[0]
+    # Simple logic: combine return, P/E, EPS, analyst rating, dividend
     score = 0
     if one_year_return > 0.10: score += 1
     if pe_ratio and pe_ratio < 25: score += 1
@@ -102,10 +68,11 @@ def junior_ai_analyst_recommendation(hist, pe_ratio, eps, analyst_rating, divide
     else:
         return "Junior AI Analyst: Sell or Avoid (weak trend or fundamentals)."
 
-# -----------------------
-# Analyst Reasoning Summary
-# -----------------------
 def generate_analyst_reasoning(ticker, stats, news_summary):
+    """
+    stats: dict with keys like 'pe_ratio', 'eps', 'dividend_yield', 'one_year_return', 'analyst_rating'
+    news_summary: string, the output from your news summarizer
+    """
     prompt = (
         f"You are a junior quantitative analyst reviewing the stock report for {ticker}.\n\n"
         "Given the following key statistics, use data-driven reasoning to explain in 2-3 sentences the main factors behind your investment recommendation. "
@@ -118,13 +85,7 @@ def generate_analyst_reasoning(ticker, stats, news_summary):
         f"- Analyst rating: {stats.get('analyst_rating', 'N/A')}\n\n"
         "Write your reasoning in clear, natural language for investors."
     )
-    summary = summarizer(
-        prompt,
-        max_length=100,
-        min_length=40,
-        do_sample=False,
-        num_beams=4,
-        no_repeat_ngram_size=3,
-        repetition_penalty=1.2
-    )
+    print("Prompt:", prompt)
+    summary = summarizer(prompt, max_length=100, min_length=40, do_sample=False, num_beams=4, no_repeat_ngram_size=3, repetition_penalty=1.2)
+    print("Summary:", summary)
     return summary[0]['summary_text']
