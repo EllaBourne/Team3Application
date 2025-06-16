@@ -7,7 +7,10 @@ import os
 from datetime import datetime, timedelta
 import yfinance as yf
 import requests
-from helpers import junior_ai_analyst_recommendation
+from helpers import junior_ai_analyst_recommendation, get_regression_series, dcf_fair_value_estimate, calculate_linear_regression, calculate_dcf_valuation
+from sklearn.linear_model import LinearRegression
+import numpy as np
+import math
 
 app = FastAPI()
 
@@ -27,7 +30,7 @@ def get_stock_news(stock_symbol):
     response = requests.get(url)
     if response.status_code == 200:
         articles = response.json().get('articles', [])[:5]
-        print("News articles:", articles)
+        # print("News articles:", articles)
         return articles
     return []
 
@@ -49,12 +52,23 @@ async def stock(request: Request, stock_symbol: str = Form(...)):
         )
         if data.empty:
             raise ValueError("No data found for this symbol.")
+
+        # Regression calculation
+        dates = np.array([i for i in range(len(data))]).reshape(-1, 1)
+        prices = data['Close'].values.reshape(-1, 1)
+        model = LinearRegression()
+        model.fit(dates, prices)
+        predicted = model.predict(dates)
+        predicted_price = calculate_linear_regression(data)
+
         plt.figure(figsize=(10, 5))
-        plt.plot(data['Close'], color='#0033a0')
+        plt.plot(data.index, data['Close'], label="Actual Price", color='#0033a0')
+        plt.plot(data.index, predicted, label="Linear Trend", linestyle='--', color='orange')
         plt.title(f'Historical Stock Prices for {stock_symbol} (10 Years)')
         plt.xlabel('Date')
         plt.ylabel('Price (USD)')
         plt.grid(True, color='#d72631', linestyle='--', linewidth=0.5)
+        plt.legend()
         graph_filename = f'{stock_symbol}_graph.png'
         graph_path = os.path.join('static', graph_filename)
         plt.tight_layout()
@@ -84,6 +98,40 @@ async def stock(request: Request, stock_symbol: str = Form(...)):
                     chart_data.append([timestamp, close_val])
             except Exception:
                 continue
+        regression_data = get_regression_series(data)
+        dcf_value = dcf_fair_value_estimate(data)
+        current_price = None
+        valuation_message = None
+        try:
+            ticker = yf.Ticker(stock_symbol)
+            info = ticker.info
+            current_price = info.get("regularMarketPrice", None)
+            # Ensure both are floats and not NaN
+            try:
+                if hasattr(current_price, "item"):
+                    current_price = float(current_price.item())
+                if hasattr(dcf_value, "item"):
+                    dcf_value = float(dcf_value.item())
+            except Exception:
+                pass
+
+            if (
+                dcf_value is not None and
+                current_price is not None and
+                not math.isnan(dcf_value) and
+                not math.isnan(current_price)
+            ):
+                diff = dcf_value - current_price
+                pct = (diff / current_price) * 100
+                if diff > 0:
+                    valuation_message = f"This stock is <strong style='color:green;'>undervalued</strong> by ${diff:.2f} ({pct:.2f}%)."
+                else:
+                    valuation_message = f"This stock is <strong style='color:red;'>overvalued</strong> by ${-diff:.2f} ({-pct:.2f}%)."
+            else:
+                valuation_message = "DCF fair value estimate not available."
+        except Exception as e:
+            print("Error fetching ticker info:", e)
+            valuation_message = "DCF fair value estimate not available."
         return templates.TemplateResponse(
             "stock.html",
             {
@@ -93,6 +141,11 @@ async def stock(request: Request, stock_symbol: str = Form(...)):
                 "news_articles": news_articles,
                 "nl_summary": nl_summary,
                 "chart_data": chart_data,
+                "regression_data": regression_data,
+                "dcf_value": dcf_value,
+                "current_price": current_price,
+                "valuation_message": valuation_message,
+                "predicted_price": predicted_price,
             }
         )
     except Exception as e:
@@ -160,6 +213,33 @@ async def report(request: Request, stock_symbol: str = Form(...)):
             },
             nl_summary
         )
+        current_price = info.get("regularMarketPrice", None)
+        dcf_value = calculate_dcf_valuation(info)
+
+        # Ensure both are floats and not NaN
+        try:
+            if hasattr(current_price, "item"):
+                current_price = float(current_price.item())
+            if hasattr(dcf_value, "item"):
+                dcf_value = float(dcf_value.item())
+        except Exception:
+            pass
+
+        if (
+            dcf_value is not None and
+            current_price is not None and
+            not math.isnan(dcf_value) and
+            not math.isnan(current_price)
+        ):
+            diff = dcf_value - current_price
+            pct = (diff / current_price) * 100
+            if diff > 0:
+                valuation_message = f"This stock is <strong style='color:green;'>undervalued</strong> by ${diff:.2f} ({pct:.2f}%)."
+            else:
+                valuation_message = f"This stock is <strong style='color:red;'>overvalued</strong> by ${-diff:.2f} ({-pct:.2f}%)."
+        else:
+            valuation_message = "DCF fair value estimate not available."
+
         print("YFinance info for", stock_symbol, ":", info)  # <-- Add this line
         return templates.TemplateResponse(
             "report.html",
@@ -188,9 +268,84 @@ async def report(request: Request, stock_symbol: str = Form(...)):
                 "nl_summary": nl_summary,
                 "ai_recommendation": ai_recommendation,
                 "reasoning_blurb": reasoning_blurb,
+                "valuation_message": valuation_message,
             }
         )
     except Exception as e:
         error = f"Error: {str(e)}"
         return templates.TemplateResponse("index.html", {"request": request, "error": error})
+
+def simple_dcf_valuation(ticker, years=5, discount_rate=0.10, perpetual_growth=0.02):
+    """
+    Returns estimated fair value per share using a conservative DCF model.
+    """
+    import numpy as np
+    import yfinance as yf
+
+    stock = yf.Ticker(ticker)
+    try:
+        cashflow = stock.cashflow
+
+        # Try both possible row names for operating cash flow
+        op_cash_row = None
+        for possible in ['Total Cash From Operating Activities', 'Operating Cash Flow']:
+            if possible in cashflow.index:
+                op_cash_row = possible
+                break
+
+        capex_row = None
+        for possible in ['Capital Expenditures', 'Capital Expenditure']:
+            if possible in cashflow.index:
+                capex_row = possible
+                break
+
+        if op_cash_row is not None and capex_row is not None and cashflow.shape[1] > 0:
+            op_cash = cashflow.loc[op_cash_row][0]
+            capex = cashflow.loc[capex_row][0]
+            if not np.isnan(op_cash) and not np.isnan(capex):
+                fcf = float(op_cash) - float(capex)
+            else:
+                raise ValueError("NaN in cashflow rows")
+        else:
+            raise ValueError("Missing required cashflow rows")
+    except Exception as e:
+        print(f"Exception in DCF cashflow for {ticker}: {e}")
+        # Fallback to freeCashflow or a conservative EPS proxy
+        try:
+            info = stock.info
+            shares_outstanding = info.get('sharesOutstanding', 0)
+            if not shares_outstanding:
+                return None
+            fcf = info.get('freeCashflow')
+            if fcf is not None:
+                fcf = float(fcf)
+            else:
+                eps = info.get('trailingEps')
+                if not eps:
+                    return None
+                fcf = eps * 0.15 * shares_outstanding  # Very conservative proxy
+        except Exception as e2:
+            print(f"Exception in DCF fallback for {ticker}: {e2}")
+            return None
+
+    # Conservative assumptions
+    fcf_growth = 0.03
+    projected_fcfs = [fcf * ((1 + fcf_growth) ** i) for i in range(1, years + 1)]
+    discounted_fcfs = [fcf_ / ((1 + discount_rate) ** i) for i, fcf_ in enumerate(projected_fcfs, 1)]
+    terminal_value = projected_fcfs[-1] * (1 + perpetual_growth) / (discount_rate - perpetual_growth)
+    discounted_terminal = terminal_value / ((1 + discount_rate) ** years)
+    dcf_value = sum(discounted_fcfs) + discounted_terminal
+
+    try:
+        shares_outstanding = stock.info.get('sharesOutstanding', None)
+        if not shares_outstanding or shares_outstanding == 0:
+            print(f"Shares outstanding missing or zero for {ticker}: {shares_outstanding}")
+            return None
+    except Exception as e:
+        print(f"Exception in DCF shares outstanding for {ticker}: {e}")
+        return None
+
+    fair_value_per_share = dcf_value / shares_outstanding
+    print(f"DCF fair value for {ticker}: {fair_value_per_share}")
+    return round(fair_value_per_share, 2)
 

@@ -5,7 +5,6 @@
     <title>{{ stock_symbol }} - StockWiz</title>
     <link rel="stylesheet" href="{{ request.url_for('static', path='css/style.css') }}">
     <script src="https://code.highcharts.com/stock/highstock.js"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
     <!-- Toggle button in its own fixed container -->
@@ -56,66 +55,45 @@
             </ul>
         </div>
         {% endif %}
+        <div style="margin: 32px 0;">
+            <h3>Linear Regression Trend</h3>
+            <img src="{{ request.url_for('static', path=graph_filename) }}" alt="Regression Graph" style="max-width:100%;border-radius:12px;box-shadow:0 2px 8px #eee;">
+        </div>
+        <div class="card" style="margin:32px auto; max-width:500px; text-align:left;">
+            <h2>DCF Fair Value Estimate</h2>
+            <p>
+                <strong>Current Price:</strong> 
+                {% if current_price %}${{ '%.2f'|format(current_price) }}{% else %}N/A{% endif %}<br>
+                <strong>DCF Fair Value:</strong> 
+                {% if dcf_value %}${{ '%.2f'|format(dcf_value) }}{% else %}N/A{% endif %}
+            </p>
+            <p style="font-size:1.1em; margin-top:12px;">
+                {{ valuation_message|safe }}
+            </p>
+        </div>
+        {% if predicted_price %}
+        {% set predicted_timestamp = chart_data[-1][0] + 24*3600*1000 %}
+        <div class="card" style="margin:32px auto; max-width:500px; text-align:left;">
+            <h2>Next Period Predicted Price (Linear Regression)</h2>
+            <p style="font-size:1.2em;">
+                <strong>${{ '%.2f'|format(predicted_price) }}</strong>
+            </p>
+        </div>
+        {% endif %}
     </div>
     <footer>
         2025 StockWiz &mdash; Powered by Yahoo Finance
     </footer>
+    <!-- Pass variables to JS -->
     <script>
-    // Light/Dark mode toggle
-    const toggleBtn = document.getElementById('toggleModeBtn');
-    const toggleIcon = document.getElementById('toggleIcon');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    function setMode(dark) {
-        if (dark) {
-            document.body.classList.add('dark-mode');
-            toggleIcon.textContent = '☀️';
-        } else {
-            document.body.classList.remove('dark-mode');
-            toggleIcon.textContent = '🌙';
-        }
-        sessionStorage.setItem('darkMode', dark ? '1' : '0');
-    }
-    function getChartOptions() {
-        const dark = document.body.classList.contains('dark-mode');
-        return {
-            chart: {
-                type: 'line',
-                backgroundColor: 'transparent'
-            },
-            title: {
-                text: 'Historical Stock Prices for {{ stock_symbol }} (10 Years)',
-                style: { color: dark ? '#b3baff' : 'var(--primary)' }
-            },
-            xAxis: {
-                type: 'datetime',
-                title: { text: 'Date', style: { color: dark ? '#b3baff' : 'inherit' } },
-                labels: { style: { color: dark ? '#b3baff' : 'inherit' } },
-                gridLineColor: dark ? '#353945' : '#e6e8ec'
-            },
-            yAxis: {
-                title: { text: 'Price (USD)', style: { color: dark ? '#b3baff' : 'inherit' } },
-                labels: { style: { color: dark ? '#b3baff' : 'inherit' } },
-                gridLineColor: dark ? '#353945' : '#e6e8ec'
-            },
-            series: [{
-                name: "{{ stock_symbol }}",
-                data: {{ chart_data|tojson|safe }},
-                color: dark ? "#b3baff" : "#0033a0",
-                lineWidth: 3,
-                marker: { enabled: false }
-            }],
-            credits: { enabled: false }
-        };
-    }
-    function renderChart() {
-        Highcharts.stockChart('stock-chart', getChartOptions());
-    }
-    toggleBtn.onclick = () => {
-        setMode(!document.body.classList.contains('dark-mode'));
-        setTimeout(renderChart, 200);
+    window.stockWizVars = {
+        stockSymbol: "{{ stock_symbol }}",
+        chartData: {{ chart_data|tojson|safe }},
+        regressionData: {{ regression_data|tojson|safe }},
+        predictedPrice: {{ predicted_price if predicted_price else 'null' }},
+        predictedTimestamp: {{ predicted_timestamp if predicted_price else 'null' }}
     };
-    setMode(sessionStorage.getItem('darkMode') === '1' || (sessionStorage.getItem('darkMode') === null && prefersDark));
-    document.addEventListener('DOMContentLoaded', renderChart);
     </script>
+    <script src="{{ request.url_for('static', path='js/main.js') }}"></script>
 </body>
 </html>
