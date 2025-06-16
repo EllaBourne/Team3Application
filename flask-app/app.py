@@ -11,13 +11,16 @@ from helpers import junior_ai_analyst_recommendation, get_regression_series, dcf
 from sklearn.linear_model import LinearRegression
 import numpy as np
 import math
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-NEWS_API_KEY = 'd4b6777932da4e32ba9d8972d1aa7984'  # Replace with your actual key
+NEWS_API_KEY = os.getenv('NEWS_API_KEY')
 
 def get_stock_news(stock_symbol):
     url = (
